@@ -27,4 +27,11 @@ Extensive experiments on ImageNet-1K and ADE20K demonstrate that EGCVMamba outpe
 
   <div align="center">
 <h3>Prerequisites</h3>
-python 3.9.25 
+python 3.9.25<br>
+pytorch 2.6.0<br>
+timm 0.9.2<br>
+triton 3.4.0<br>
+torchvision 0.23.0<br>
+thop 0.1.1-2209072238 <br>
+tqdm 4.67.3<br>
+wandb 0.25.0<br>
