@@ -1,0 +1,15 @@
+cff-version: 1.2.0
+title: "EGCVMamba: Efficient Gated Convolution-Mamba Hybrid Architecture for Visual Recognition"
+message: "If you use EGCVMamba, please cite this work."
+type: conference-paper
+authors:
+  - family-names: Chen
+    given-names: Mingshuai
+  - family-names: Jia
+    given-names: Yue
+  - family-names: Peng
+    given-names: Enhao
+year: 2026
+conference:
+  name: ICONIP 2026
+repository-code: "https://github.com/3506167244-max/EGCVmamba"

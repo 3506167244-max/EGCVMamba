@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "egcvmamba"
+version = "0.1.0"
+description = "Efficient Gated Convolution-Mamba hybrid architecture for visual recognition"
+readme = "README.md"
+requires-python = ">=3.9"
+license = {text = "MIT"}
+authors = [
+  {name = "Mingshuai Chen"},
+  {name = "Yue Jia"},
+  {name = "Enhao Peng"}
+]
+dependencies = [
+  "torch>=2.1.0",
+  "torchvision>=0.16.0",
+  "timm>=0.9.12",
+  "numpy>=1.23.0",
+  "pyyaml>=6.0.0",
+  "tqdm>=4.66.0",
+  "pillow>=10.0.0"
+]
+
+[tool.setuptools.packages.find]
+include = ["egcvmamba*"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py39"

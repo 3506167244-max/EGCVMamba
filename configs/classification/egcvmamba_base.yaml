@@ -1,0 +1,20 @@
+seed: 42
+output: outputs/imagenet/egcvmamba_base
+model:
+  variant: base
+  num_classes: 1000
+  drop_path_rate: 0.12
+data:
+  path: /path/to/imagenet
+  image_size: 224
+train:
+  epochs: 300
+  warmup_epochs: 5
+  batch_size: 96
+  workers: 8
+  lr: 0.001
+  weight_decay: 0.00001
+  label_smoothing: 0.1
+  ema: true
+  ema_decay: 0.9998
+  clip_grad: 5.0
