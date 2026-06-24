@@ -3,7 +3,7 @@
 **EGCVMamba: Efficient Gated Convolution-Mamba Hybrid Architecture for Visual Recognition**.
 
 EGCVMamba is a lightweight visual backbone for resource-limited recognition tasks. It combines reparameterized convolutional stems, gated CNN blocks, hierarchical multi-scale fusion, and an efficient 2D selective scan block in a stage-adaptive architecture.
-**By HITSZ Mingshuai Chen  HKUST(GZ) Yue Jia  Rice University Enhao Peng**
+**By  HITSZ Mingshuai Chen      HKUST(GZ) Yue Jia      Rice University Enhao Peng**
 
 ## Highlights
 
