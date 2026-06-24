@@ -25,17 +25,6 @@ EGCVMamba is a lightweight visual backbone for resource-limited recognition task
 | Stage 3 | 1/16 | BetaBlock + GammaBlock | Multi-scale local enhancement |
 | Stage 4 | 1/32 | EVSSBlock | Global context modeling |
 
-## Model Zoo
-
-| Model | Channels | Blocks | Params | ImageNet-1K Top-1 | ADE20K mIoU |
-| --- | --- | --- | --- | --- | --- |
-| EGCVMamba-T | [64, 96, 192, 384] | [1, 1, 1, 1] | 2.0M | 72.1 | 40.3 |
-| EGCVMamba-S | [64, 128, 256, 512] | [2, 3, 4, 2] | 9.1M | 75.8 | 41.2 |
-| EGCVMamba-B | [80, 160, 320, 640] | [3, 4, 6, 3] | 20.8M | 78.3 | - |
-| EGCVMamba-L | [96, 192, 384, 768] | [4, 6, 8, 4] | 39.9M | 80.3 | - |
-
-We will release pretrained weights and full training logs after acceptance.
-
 ## Installation
 
 ```bash
@@ -162,7 +151,4 @@ tests/
   year={2026}
 }
 ```
-
-## License
-
-This project is released under the MIT license.
+We will release pretrained weights and full training logs after acceptance.
