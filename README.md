@@ -1,9 +1,10 @@
+# EGCVMamba
 
+**EGCVMamba: Efficient Gated Convolution-Mamba Hybrid Architecture for Visual Recognition**
 
-**EGCVMamba: Efficient Gated Convolution-Mamba Hybrid Architecture for Visual Recognition**.
+EGCVMamba is a lightweight visual backbone for resource-limited recognition tasks. It combines reparameterized convolutional stems, gated CNN blocks, hierarchical multi-scale fusion, and an efficient 2D selective-scan style block in a stage-adaptive architecture.
 
-EGCVMamba is a lightweight visual backbone for resource-limited recognition tasks. It combines reparameterized convolutional stems, gated CNN blocks, hierarchical multi-scale fusion, and an efficient 2D selective scan block in a stage-adaptive architecture.
-**By  HITSZ Mingshuai Chen      HKUST(GZ) Yue Jia      Rice University Enhao Peng**
+**Authors:** HITSZ Mingshuai Chen, HKUST(GZ) Yue Jia, Rice University Enhao Peng
 
 ## Highlights
 
@@ -12,7 +13,7 @@ EGCVMamba is a lightweight visual backbone for resource-limited recognition task
 - AlphaBlock for fine-grained local feature extraction in high-resolution stages.
 - BetaBlock with hierarchical gated fusion and channel aggregation for medium-resolution features.
 - GammaBlock with recursive gated convolution and local kernel fusion for multi-scale local perception.
-- EVSSBlock with 2D selective scan for long-range global modeling in the final low-resolution stage.
+- EVSSBlock with efficient 2D selective-scan style global context modeling in the final low-resolution stage.
 - Unified classification and semantic segmentation code path.
 
 ## Architecture
@@ -28,8 +29,8 @@ EGCVMamba is a lightweight visual backbone for resource-limited recognition task
 ## Installation
 
 ```bash
-git clone https://github.com/3506167244-max/EGCVmamba.git
-cd EGCVmamba
+git clone https://github.com/3506167244-max/EGCVMamba.git
+cd EGCVMamba
 conda create -n egcvmamba python=3.10 -y
 conda activate egcvmamba
 pip install -r requirements.txt
@@ -45,7 +46,21 @@ from egcvmamba.models import build_model
 model = build_model("tiny", num_classes=1000)
 x = torch.randn(1, 3, 224, 224)
 y = model(x)
-print(y.shape)
+print(y.shape)  # torch.Size([1, 1000])
+```
+
+## Sanity Check
+
+Before training, run the following checks to make sure the repository and environment are correctly installed:
+
+```bash
+python -m py_compile egcvmamba/models/egcvmamba.py
+python -m py_compile egcvmamba/models/blocks.py
+python -m py_compile egcvmamba/models/layers.py
+python -m py_compile egcvmamba/models/segmentation.py
+python -m py_compile egcvmamba/data.py
+python -m py_compile egcvmamba/engine.py
+pytest
 ```
 
 ## ImageNet-1K Training
@@ -141,6 +156,10 @@ tests/
   test_model_shapes.py
 ```
 
+## Reproducibility Notes
+
+The released code is intended to make the model structure, training pipeline, and evaluation entry points clear and easy to inspect. Full pretrained checkpoints and detailed training logs will be released after acceptance. The reported numbers in the paper should be reproduced with the corresponding configuration files, dataset versions, image resolution, random seed, and training schedule.
+
 ## Citation
 
 ```bibtex
@@ -151,4 +170,3 @@ tests/
   year={2026}
 }
 ```
-We will release pretrained weights and full training logs after acceptance.
