@@ -34,7 +34,7 @@ EGCVMamba is a lightweight visual backbone for resource-limited recognition task
 | EGCVMamba-B | [80, 160, 320, 640] | [3, 4, 6, 3] | 20.8M | 78.3 | - |
 | EGCVMamba-L | [96, 192, 384, 768] | [4, 6, 8, 4] | 39.9M | 80.3 | - |
 
-Numbers are taken from the paper draft. This repository provides the cleaned research code structure and training recipes.
+We will release pretrained weights and full training logs after acceptance.
 
 ## Installation
 
