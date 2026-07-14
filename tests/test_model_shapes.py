@@ -1,6 +1,7 @@
 import torch
 
 from egcvmamba.models import build_model, build_segmentation_model
+from egcvmamba.models.blocks import SelectiveScan2D
 
 
 def test_classification_shape():
@@ -19,3 +20,12 @@ def test_segmentation_shape():
     with torch.no_grad():
         y = model(x)
     assert y.shape == (1, 150, 128, 128)
+
+
+def test_selective_scan_backward_is_finite():
+    block = SelectiveScan2D(16, state_dim=4)
+    x = torch.randn(2, 16, 4, 4, requires_grad=True)
+    loss = block(x).square().mean()
+    loss.backward()
+    assert x.grad is not None
+    assert torch.isfinite(x.grad).all()

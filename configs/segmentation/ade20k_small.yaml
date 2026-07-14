@@ -3,7 +3,7 @@ output: outputs/ade20k/egcvmamba_small
 model:
   variant: small
   num_classes: 150
-  drop_path_rate: 0.08
+  drop_path_rate: 0.10
   decoder_channels: 160
 data:
   path: /path/to/ADEChallengeData2016
@@ -11,7 +11,18 @@ data:
 train:
   epochs: 160
   warmup_epochs: 5
-  batch_size: 12
+  batch_size: 8  # per GPU; 32 global on 4 GPUs
+  reference_batch_size: 32
   workers: 8
-  lr: 0.0001
-  weight_decay: 0.0001
+  lr: 0.0006
+  min_lr: 0.000001
+  backbone_lr_multiplier: 0.1
+  weight_decay: 0.01
+  betas: [0.9, 0.999]
+  clip_grad: 5.0
+  precision: bf16
+  channels_last: true
+  cudnn_benchmark: true
+  auto_resume: true
+augmentation:
+  scale_range: [0.5, 2.0]

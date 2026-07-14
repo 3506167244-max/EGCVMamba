@@ -1,10 +1,14 @@
 # EGCVMamba
 
-**EGCVMamba: Efficient Gated Convolution-Mamba Hybrid Architecture for Visual Recognition**
+Official PyTorch implementation for **EGCVMamba: Efficient Gated Convolution-Mamba Hybrid Architecture for Visual Recognition**.
 
-EGCVMamba is a lightweight visual backbone for resource-limited recognition tasks. It combines reparameterized convolutional stems, gated CNN blocks, hierarchical multi-scale fusion, and an efficient 2D selective-scan style block in a stage-adaptive architecture.
+Mingshuai Chen<sup>1</sup>, Yue Jia<sup>2</sup>, Enhao Peng<sup>3</sup>
 
-**Authors:** HITSZ Mingshuai Chen, HKUST(GZ) Yue Jia, Rice University Enhao Peng
+<sup>1</sup>Harbin Institute of Technology, Shenzhen  
+<sup>2</sup>The Hong Kong University of Science and Technology (Guangzhou)  
+<sup>3</sup>Rice University
+
+EGCVMamba is a lightweight visual backbone for resource-limited recognition tasks. It combines reparameterized convolutional stems, gated CNN blocks, hierarchical multi-scale fusion, and an efficient 2D selective scan block in a stage-adaptive architecture.
 
 ## Highlights
 
@@ -13,7 +17,7 @@ EGCVMamba is a lightweight visual backbone for resource-limited recognition task
 - AlphaBlock for fine-grained local feature extraction in high-resolution stages.
 - BetaBlock with hierarchical gated fusion and channel aggregation for medium-resolution features.
 - GammaBlock with recursive gated convolution and local kernel fusion for multi-scale local perception.
-- EVSSBlock with efficient 2D selective-scan style global context modeling in the final low-resolution stage.
+- EVSSBlock with 2D selective scan for long-range global modeling in the final low-resolution stage.
 - Unified classification and semantic segmentation code path.
 
 ## Architecture
@@ -26,11 +30,37 @@ EGCVMamba is a lightweight visual backbone for resource-limited recognition task
 | Stage 3 | 1/16 | BetaBlock + GammaBlock | Multi-scale local enhancement |
 | Stage 4 | 1/32 | EVSSBlock | Global context modeling |
 
+## Model Configurations
+
+| Model | Channels | Blocks |
+| --- | --- | --- |
+| EGCVMamba-T | [64, 96, 192, 384] | [1, 1, 1, 1] |
+| EGCVMamba-S | [64, 128, 256, 512] | [2, 3, 4, 2] |
+| EGCVMamba-B | [80, 160, 320, 640] | [3, 4, 6, 3] |
+| EGCVMamba-L | [96, 192, 384, 768] | [4, 6, 8, 4] |
+
+The paper-draft metrics have not been reproduced and are therefore not presented as verified results here. Use the generated validation logs and checkpoints as the source of truth for each run.
+
+## Pretrained Models
+
+Pretrained checkpoints and complete training logs will be released after paper acceptance.
+
+| Model | ImageNet-1K | ADE20K | Status |
+| --- | --- | --- | --- |
+| EGCVMamba-T | Pending | Pending | Release after acceptance |
+| EGCVMamba-S | Pending | Pending | Release after acceptance |
+| EGCVMamba-B | Pending | - | Release after acceptance |
+| EGCVMamba-L | Pending | - | Release after acceptance |
+
+The repository does not currently provide pretrained weights. Files produced by local training are stored under `outputs/` and are excluded from version control.
+
+For the recommended 4-GPU RTX 5090 environment, tuned recipes, resume/evaluation commands, and troubleshooting, see [TRAINING_ZH.md](TRAINING_ZH.md).
+
 ## Installation
 
 ```bash
-git clone https://github.com/3506167244-max/EGCVMamba.git
-cd EGCVMamba
+git clone https://github.com/3506167244-max/EGCVmamba.git
+cd EGCVmamba
 conda create -n egcvmamba python=3.10 -y
 conda activate egcvmamba
 pip install -r requirements.txt
@@ -46,21 +76,7 @@ from egcvmamba.models import build_model
 model = build_model("tiny", num_classes=1000)
 x = torch.randn(1, 3, 224, 224)
 y = model(x)
-print(y.shape)  # torch.Size([1, 1000])
-```
-
-## Sanity Check
-
-Before training, run the following checks to make sure the repository and environment are correctly installed:
-
-```bash
-python -m py_compile egcvmamba/models/egcvmamba.py
-python -m py_compile egcvmamba/models/blocks.py
-python -m py_compile egcvmamba/models/layers.py
-python -m py_compile egcvmamba/models/segmentation.py
-python -m py_compile egcvmamba/data.py
-python -m py_compile egcvmamba/engine.py
-pytest
+print(y.shape)
 ```
 
 ## ImageNet-1K Training
@@ -80,7 +96,7 @@ Expected dataset layout:
 Training:
 
 ```bash
-python tools/train_classification.py \
+torchrun --standalone --nproc_per_node=4 tools/train_classification.py \
   --config configs/classification/egcvmamba_tiny.yaml \
   --data-path /path/to/imagenet
 ```
@@ -111,9 +127,10 @@ Expected dataset layout:
 Training:
 
 ```bash
-python tools/train_segmentation.py \
+torchrun --standalone --nproc_per_node=4 tools/train_segmentation.py \
   --config configs/segmentation/ade20k_tiny.yaml \
-  --data-path /path/to/ADEChallengeData2016
+  --data-path /path/to/ADEChallengeData2016 \
+  --pretrained outputs/imagenet/egcvmamba_tiny/best.pth
 ```
 
 ## Profiling
@@ -156,10 +173,6 @@ tests/
   test_model_shapes.py
 ```
 
-## Reproducibility Notes
-
-The released code is intended to make the model structure, training pipeline, and evaluation entry points clear and easy to inspect. Full pretrained checkpoints and detailed training logs will be released after acceptance. The reported numbers in the paper should be reproduced with the corresponding configuration files, dataset versions, image resolution, random seed, and training schedule.
-
 ## Citation
 
 ```bibtex
@@ -170,3 +183,7 @@ The released code is intended to make the model structure, training pipeline, an
   year={2026}
 }
 ```
+
+## License
+
+This project is released under the MIT license.

@@ -78,8 +78,12 @@ class EGCVMamba(nn.Module):
         cursor += stage_blocks[2]
         self.down3 = DownsampleBlock(stage_channels[2], stage_channels[3])
         self.stage4 = Stage(stage_channels[3], stage_channels[3], stage_blocks[3], "evss", drop_rates[cursor:cursor + stage_blocks[3]])
-        self.norm = nn.BatchNorm2d(stage_channels[-1])
-        self.head = nn.Linear(stage_channels[-1], num_classes)
+        if features_only:
+            self.norm = nn.Identity()
+            self.head = nn.Identity()
+        else:
+            self.norm = nn.BatchNorm2d(stage_channels[-1])
+            self.head = nn.Linear(stage_channels[-1], num_classes)
         self.apply(self._init_weights)
 
     def _init_weights(self, module):

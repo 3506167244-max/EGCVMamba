@@ -153,24 +153,110 @@ class GammaBlock(nn.Module):
 
 
 class SelectiveScan2D(nn.Module):
-    def __init__(self, channels, state_ratio=2):
+    """Four-direction, input-dependent 2D state-space scan.
+
+    The scan is intentionally implemented with PyTorch operations instead of a
+    custom CUDA extension. Stage 4 only sees a 7x7 map for a 224x224 input, so
+    this implementation is fast enough for training while remaining portable to
+    new CUDA architectures (including Blackwell).
+    """
+
+    def __init__(self, channels, expand_ratio=2, state_dim=8, dt_rank="auto"):
         super().__init__()
-        hidden = channels * state_ratio
-        self.in_proj = nn.Conv2d(channels, hidden, 1)
+        hidden = int(channels * expand_ratio)
+        dt_rank = max(channels // 16, 1) if dt_rank == "auto" else int(dt_rank)
+        self.hidden = hidden
+        self.state_dim = state_dim
+        self.dt_rank = dt_rank
+        self.num_directions = 4
+
+        self.in_proj = nn.Conv2d(channels, hidden * 2, 1)
         self.dwconv = nn.Conv2d(hidden, hidden, 3, padding=1, groups=hidden)
-        self.gate = nn.Conv2d(channels, hidden, 1)
+        self.x_proj_weight = nn.Parameter(
+            torch.empty(self.num_directions, dt_rank + state_dim * 2, hidden)
+        )
+        self.dt_proj_weight = nn.Parameter(torch.empty(self.num_directions, hidden, dt_rank))
+        self.dt_proj_bias = nn.Parameter(torch.empty(self.num_directions, hidden))
+        self.A_log = nn.Parameter(torch.empty(self.num_directions, hidden, state_dim))
+        self.D = nn.Parameter(torch.ones(self.num_directions, hidden))
+        self.out_norm = LayerNorm2d(hidden)
         self.out_proj = nn.Conv2d(hidden, channels, 1)
-        self.alpha = nn.Parameter(torch.ones(1, hidden, 1, 1) * 0.25)
+        self.reset_parameters()
+
+    def reset_parameters(self):
+        for direction_weight in self.x_proj_weight:
+            nn.init.xavier_uniform_(direction_weight)
+        bound = self.dt_rank ** -0.5
+        nn.init.uniform_(self.dt_proj_weight, -bound, bound)
+
+        # Start with time steps log-uniformly distributed in [1e-3, 1e-1].
+        dt = torch.exp(
+            torch.rand(self.num_directions, self.hidden) * (torch.log(torch.tensor(0.1)) - torch.log(torch.tensor(1e-3)))
+            + torch.log(torch.tensor(1e-3))
+        )
+        inv_softplus = dt + torch.log(-torch.expm1(-dt))
+        with torch.no_grad():
+            self.dt_proj_bias.copy_(inv_softplus)
+            base = torch.arange(1, self.state_dim + 1, dtype=torch.float32).log()
+            self.A_log.copy_(base.view(1, 1, -1).expand_as(self.A_log))
+
+    @staticmethod
+    def _cross_scan(x):
+        row_major = x.flatten(2)
+        column_major = x.transpose(2, 3).contiguous().flatten(2)
+        return torch.stack(
+            [row_major, column_major, row_major.flip(-1), column_major.flip(-1)],
+            dim=1,
+        )
+
+    def _selective_scan(self, u, dt, B, C):
+        input_dtype = u.dtype
+        u = u.float()
+        dt = F.softplus(dt.float())
+        B = B.float()
+        C = C.float()
+        A = -torch.exp(self.A_log.float())
+        D = self.D.float()
+
+        batch, directions, hidden, length = u.shape
+        state = u.new_zeros(batch, directions, hidden, self.state_dim)
+        outputs = []
+        for index in range(length):
+            dt_t = dt[..., index]
+            transition = torch.exp(dt_t.unsqueeze(-1) * A.unsqueeze(0))
+            input_update = (
+                dt_t.unsqueeze(-1)
+                * B[..., index].unsqueeze(2)
+                * u[..., index].unsqueeze(-1)
+            )
+            state = transition * state + input_update
+            y = (state * C[..., index].unsqueeze(2)).sum(-1)
+            outputs.append(y + D.unsqueeze(0) * u[..., index])
+        return torch.stack(outputs, dim=-1).to(input_dtype)
+
+    @staticmethod
+    def _cross_merge(y, height, width):
+        batch, _, hidden, _ = y.shape
+        row = y[:, 0] + y[:, 2].flip(-1)
+        column = y[:, 1] + y[:, 3].flip(-1)
+        column = column.view(batch, hidden, width, height).transpose(2, 3).contiguous().flatten(2)
+        return ((row + column) * 0.25).view(batch, hidden, height, width)
 
     def forward(self, x):
-        u = F.silu(self.dwconv(self.in_proj(x)), inplace=True)
-        g = torch.sigmoid(self.gate(x))
-        h1 = torch.cumsum(u, dim=2)
-        h2 = torch.flip(torch.cumsum(torch.flip(u, dims=[2]), dim=2), dims=[2])
-        h3 = torch.cumsum(u, dim=3)
-        h4 = torch.flip(torch.cumsum(torch.flip(u, dims=[3]), dim=3), dims=[3])
-        h = (h1 + h2 + h3 + h4) * self.alpha
-        return self.out_proj(h * g)
+        _, _, height, width = x.shape
+        u, gate = self.in_proj(x).chunk(2, dim=1)
+        u = F.silu(self.dwconv(u), inplace=True)
+        sequences = self._cross_scan(u)
+
+        projected = torch.einsum("bkdl,kcd->bkcl", sequences, self.x_proj_weight)
+        dt_features, B, C = torch.split(projected, [self.dt_rank, self.state_dim, self.state_dim], dim=2)
+        dt = torch.einsum("bkrl,kdr->bkdl", dt_features, self.dt_proj_weight)
+        dt = dt + self.dt_proj_bias.unsqueeze(0).unsqueeze(-1)
+
+        scanned = self._selective_scan(sequences, dt, B, C)
+        merged = self._cross_merge(scanned, height, width)
+        merged = self.out_norm(merged) * F.silu(gate)
+        return self.out_proj(merged)
 
 
 class EVSSBlock(nn.Module):
